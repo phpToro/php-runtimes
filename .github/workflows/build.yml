@@ -8,12 +8,27 @@ on:
         required: true
         default: '8.5.3'
         type: string
-  push:
-    tags:
-      - 'v*'
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Determine next build number
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PHP="${{ inputs.php_version }}"
+          LATEST=$(gh release list --repo ${{ github.repository }} --json tagName --jq \
+            "[.[] | select(.tagName | startswith(\"v${PHP}-\")) | .tagName | ltrimstr(\"v${PHP}-\") | tonumber] | max // 0")
+          NEXT=$((LATEST + 1))
+          echo "tag=v${PHP}-${NEXT}" >> $GITHUB_OUTPUT
+          echo "Next release: v${PHP}-${NEXT}"
+
   build:
+    needs: resolve
     strategy:
       matrix:
         include:
@@ -29,13 +44,10 @@ jobs:
             runner: macos-14
 
     runs-on: ${{ matrix.runner }}
-    name: PHP ${{ inputs.php_version || '8.5.3' }} — ${{ matrix.target }}
+    name: PHP ${{ inputs.php_version }} — ${{ matrix.target }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set PHP version
-        run: echo "PHP_FULL=${{ inputs.php_version || '8.5.3' }}" >> $GITHUB_ENV
 
       - name: Set up Android NDK
         if: startsWith(matrix.target, 'android')
@@ -45,35 +57,40 @@ jobs:
 
       - name: Set Android env
         if: startsWith(matrix.target, 'android')
-        run: |
-          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.2.12479018" >> $GITHUB_ENV
+        run: echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.2.12479018" >> $GITHUB_ENV
 
       - name: Build
         run: |
           chmod +x build.sh
-          ./build.sh --php=${{ env.PHP_FULL }} --target=${{ matrix.target }}
+          ./build.sh --php=${{ inputs.php_version }} --target=${{ matrix.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: php-${{ env.PHP_FULL }}-${{ matrix.target }}
-          path: output/php-${{ env.PHP_FULL }}-${{ matrix.target }}.tar.gz
+          name: php-${{ inputs.php_version }}-${{ matrix.target }}
+          path: output/php-${{ inputs.php_version }}-${{ matrix.target }}.tar.gz
 
   release:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [resolve, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/**/*.tar.gz
-          generate_release_notes: true
+      - name: Create tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ needs.resolve.outputs.tag }}"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" artifacts/**/*.tar.gz \
+            --title "$TAG" \
+            --notes "PHP ${{ inputs.php_version }} runtimes (build ${TAG##*-})"
