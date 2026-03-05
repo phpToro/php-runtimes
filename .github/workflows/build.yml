@@ -33,27 +33,21 @@ jobs:
       matrix:
         include:
           - target: macos-arm64
-            runner: macos-14
+            runner: macos-15
           - target: ios-arm64
-            runner: macos-14
+            runner: macos-15
           - target: ios-arm64-sim
-            runner: macos-14
+            runner: macos-15
           - target: android-arm64
-            runner: macos-14
+            runner: macos-15
           - target: android-x86_64
-            runner: macos-14
+            runner: macos-15
 
     runs-on: ${{ matrix.runner }}
     name: PHP ${{ inputs.php_version }} — ${{ matrix.target }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Android NDK
-        if: startsWith(matrix.target, 'android')
-        run: |
-          yes | sdkmanager --install "ndk;27.2.12479018" 2>/dev/null || true
-          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.2.12479018" >> $GITHUB_ENV
 
       - name: Build
         run: |
