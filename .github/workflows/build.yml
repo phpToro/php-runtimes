@@ -51,13 +51,9 @@ jobs:
 
       - name: Set up Android NDK
         if: startsWith(matrix.target, 'android')
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'ndk;27.2.12479018'
-
-      - name: Set Android env
-        if: startsWith(matrix.target, 'android')
-        run: echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.2.12479018" >> $GITHUB_ENV
+        run: |
+          yes | sdkmanager --install "ndk;27.2.12479018" 2>/dev/null || true
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.2.12479018" >> $GITHUB_ENV
 
       - name: Build
         run: |
