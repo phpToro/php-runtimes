@@ -317,15 +317,19 @@ fi
 
 # ── Build phpToro extension ──────────────────────────────────────────────────
 
-step "phpToro extension (phptoro_ext)"
+step "phpToro extension (phptoro_ext + sapi + plugin registry)"
 if [[ -f "$INSTALL_DIR/lib/libphptoro_ext.a" ]]; then ok "skipping"; else
-    PHP_INCLUDES="-I$INSTALL_DIR/include/php -I$INSTALL_DIR/include/php/main -I$INSTALL_DIR/include/php/TSRM -I$INSTALL_DIR/include/php/Zend"
+    PHP_INCLUDES="-I$INSTALL_DIR/include/php -I$INSTALL_DIR/include/php/main -I$INSTALL_DIR/include/php/TSRM -I$INSTALL_DIR/include/php/Zend -I$INSTALL_DIR/include/php/ext/json -I$SCRIPT_DIR/ext"
     info "compiling phptoro_ext.c..."
     ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_ext.c" -o "$BUILD_DIR/phptoro_ext.o"
     info "compiling phptoro_phpinfo.c..."
     ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_phpinfo.c" -o "$BUILD_DIR/phptoro_phpinfo.o"
+    info "compiling phptoro_sapi.c..."
+    ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_sapi.c" -o "$BUILD_DIR/phptoro_sapi.o"
+    info "compiling phptoro_plugin.c..."
+    ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_plugin.c" -o "$BUILD_DIR/phptoro_plugin.o"
     info "creating libphptoro_ext.a..."
-    ${AR:-ar} rcs "$INSTALL_DIR/lib/libphptoro_ext.a" "$BUILD_DIR/phptoro_ext.o" "$BUILD_DIR/phptoro_phpinfo.o"
+    ${AR:-ar} rcs "$INSTALL_DIR/lib/libphptoro_ext.a" "$BUILD_DIR/phptoro_ext.o" "$BUILD_DIR/phptoro_phpinfo.o" "$BUILD_DIR/phptoro_sapi.o" "$BUILD_DIR/phptoro_plugin.o"
     ok "libphptoro_ext.a"
 fi
 
@@ -341,6 +345,8 @@ done
 cp -R "$INSTALL_DIR/include/php" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/phptoro_ext.h" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/phptoro_phpinfo.h" "$OUTPUT_DIR/include/"
+cp "$SCRIPT_DIR/ext/phptoro_sapi.h" "$OUTPUT_DIR/include/"
+cp "$SCRIPT_DIR/ext/phptoro_plugin.h" "$OUTPUT_DIR/include/"
 
 # Create archive for GitHub Releases
 ARCHIVE="$SCRIPT_DIR/output/php-$PHP_FULL-$TARGET.tar.gz"
