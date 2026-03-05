@@ -312,8 +312,9 @@ int phptoro_php_init(const char *data_dir) {
         "%s"
         "session.save_path=%s\n"
         "upload_tmp_dir=%s\n"
-        "sys_temp_dir=%s\n",
-        ini_base, sessions_dir, tmp_dir, tmp_dir);
+        "sys_temp_dir=%s\n"
+        "opcache.lockfile_path=%s\n",
+        ini_base, sessions_dir, tmp_dir, tmp_dir, tmp_dir);
 
     sapi_module.name        = sapi_name;
     sapi_module.pretty_name = sapi_pretty_name;
@@ -340,11 +341,13 @@ int phptoro_php_init(const char *data_dir) {
     sapi_module.treat_data          = cb_treat_data;
     sapi_module.input_filter        = php_default_input_filter;
 
-    sapi_module.php_ini_ignore     = 0;
+    sapi_module.php_ini_ignore     = 1;
     sapi_module.php_ini_ignore_cwd = 1;
-    sapi_module.ini_entries        = ini_entries_dynamic;
 
     sapi_startup(&sapi_module);
+
+    /* Set ini_entries AFTER sapi_startup() — it resets ini_entries to NULL */
+    sapi_module.ini_entries = ini_entries_dynamic;
 
     if (php_module_startup(&sapi_module, &phptoro_module_entry) == FAILURE) {
         sapi_shutdown();
