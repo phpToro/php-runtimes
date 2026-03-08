@@ -331,6 +331,8 @@ if [[ -f "$INSTALL_DIR/lib/libphptoro_ext.a" ]]; then ok "skipping"; else
     ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_plugin.c" -o "$BUILD_DIR/phptoro_plugin.o"
     info "compiling phptoro_ui.c..."
     ${CC:-cc} $CFLAGS -I"$SCRIPT_DIR/ext" -c "$SCRIPT_DIR/ext/phptoro_ui.c" -o "$BUILD_DIR/phptoro_ui.o"
+    info "compiling phptoro_state.c..."
+    ${CC:-cc} $CFLAGS -I"$SCRIPT_DIR/ext" -c "$SCRIPT_DIR/ext/phptoro_state.c" -o "$BUILD_DIR/phptoro_state.o"
     info "compiling cJSON.c..."
     ${CC:-cc} $CFLAGS -c "$SCRIPT_DIR/ext/cJSON.c" -o "$BUILD_DIR/cJSON.o"
     info "creating libphptoro_ext.a..."
@@ -340,6 +342,7 @@ if [[ -f "$INSTALL_DIR/lib/libphptoro_ext.a" ]]; then ok "skipping"; else
         "$BUILD_DIR/phptoro_phpinfo.o" \
         "$BUILD_DIR/phptoro_plugin.o" \
         "$BUILD_DIR/phptoro_ui.o" \
+        "$BUILD_DIR/phptoro_state.o" \
         "$BUILD_DIR/cJSON.o"
     ok "libphptoro_ext.a"
 fi
@@ -387,6 +390,7 @@ cp "$SCRIPT_DIR/ext/phptoro_plugin.h" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/phptoro_ext.h" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/phptoro_phpinfo.h" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/phptoro_ui.h" "$OUTPUT_DIR/include/"
+cp "$SCRIPT_DIR/ext/phptoro_state.h" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/phptoro_yoga.h" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/cJSON.h" "$OUTPUT_DIR/include/"
 
