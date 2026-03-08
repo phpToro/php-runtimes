@@ -17,7 +17,7 @@ typedef struct {
 
 static screen_state screens[MAX_SCREENS];
 static int screen_count = 0;
-static const char *active_screen = NULL;
+static char *active_screen = NULL;
 
 static cJSON *find_or_create(const char *screen) {
     for (int i = 0; i < screen_count; i++) {
@@ -113,7 +113,8 @@ void phptoro_state_register(void) {
 }
 
 void phptoro_state_set_screen(const char *screen) {
-    active_screen = screen;
+    free(active_screen);
+    active_screen = screen ? strdup(screen) : NULL;
 }
 
 void phptoro_state_set(const char *screen, const char *key, const char *json_value) {
