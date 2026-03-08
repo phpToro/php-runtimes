@@ -1,6 +1,6 @@
 # php-runtimes
 
-Pre-built PHP static libraries for [phpToro](https://github.com/phpToro/phptoro).
+Pre-built PHP runtime for [phpToro](https://github.com/phpToro/phptoro).
 
 ## Targets
 
@@ -16,21 +16,40 @@ Pre-built PHP static libraries for [phpToro](https://github.com/phpToro/phptoro)
 
 Each target is available as a separate download from [Releases](https://github.com/phpToro/php-runtimes/releases).
 
-Download only what you need — for example, a desktop-only app only needs `macos-arm64`.
-
 ## What's included
 
 Each archive contains:
 
-- `lib/` — Static libraries (`libphp.a`, `libxml2.a`, `libsqlite3.a`, `libiconv.a`, `libssl.a`, `libcrypto.a`, `libsodium.a`)
-- `include/` — PHP header files for compiling extensions
+- `lib/` — Static libraries (`libphp.a`, `libphptoro_ext.a`, `libxml2.a`, `libsqlite3.a`, `libiconv.a`, `libssl.a`, `libcrypto.a`, `libsodium.a`)
+- `include/` — PHP and phpToro headers
+- `src/` — Source files compiled by the platform project (Yoga layout engine)
+
+### libphptoro_ext.a
+
+The phpToro runtime library bundles:
+
+| File | Purpose |
+|---|---|
+| `phptoro_sapi.c` | PHP Embed SAPI (request/response lifecycle) |
+| `phptoro_ext.c` | `phptoro()` PHP function and `PhpToroPlugin` class |
+| `phptoro_plugin.c` | Native plugin registry and dispatcher |
+| `phptoro_ui.c` | UI directive plugin (alert, navigate, flash, haptic, etc.) |
+| `phptoro_phpinfo.c` | Branded phpinfo() output |
+| `cJSON.c` | JSON parser (MIT, v1.7.18) |
+
+### src/
+
+Source files that require platform-specific dependencies:
+
+| File | Purpose | Dependency |
+|---|---|---|
+| `phptoro_yoga.c` | Flexbox layout engine | Yoga C++ |
+
+These are compiled by the platform project (Xcode, Gradle) which provides the required headers.
 
 ## Versioning
 
-Releases follow the format `v{php_version}-{build}`, e.g. `v8.5.3-1`.
-
-- The PHP version matches the upstream PHP release
-- The build number increments when extensions or dependencies change
+Releases follow the format `v{php_version}-{build}`, e.g. `v8.5.3-5`.
 
 ## Building locally
 

@@ -318,19 +318,29 @@ fi
 
 # ── Build phpToro extension ──────────────────────────────────────────────────
 
-step "phpToro extension (phptoro_ext + sapi + plugin registry)"
+step "phpToro runtime (sapi + ext + plugin + ui + cJSON)"
 if [[ -f "$INSTALL_DIR/lib/libphptoro_ext.a" ]]; then ok "skipping"; else
     PHP_INCLUDES="-I$INSTALL_DIR/include/php -I$INSTALL_DIR/include/php/main -I$INSTALL_DIR/include/php/TSRM -I$INSTALL_DIR/include/php/Zend -I$INSTALL_DIR/include/php/ext/json -I$SCRIPT_DIR/ext"
+    info "compiling phptoro_sapi.c..."
+    ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_sapi.c" -o "$BUILD_DIR/phptoro_sapi.o"
     info "compiling phptoro_ext.c..."
     ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_ext.c" -o "$BUILD_DIR/phptoro_ext.o"
     info "compiling phptoro_phpinfo.c..."
     ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_phpinfo.c" -o "$BUILD_DIR/phptoro_phpinfo.o"
-    info "compiling phptoro_sapi.c..."
-    ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_sapi.c" -o "$BUILD_DIR/phptoro_sapi.o"
     info "compiling phptoro_plugin.c..."
     ${CC:-cc} $CFLAGS $PHP_INCLUDES -c "$SCRIPT_DIR/ext/phptoro_plugin.c" -o "$BUILD_DIR/phptoro_plugin.o"
+    info "compiling phptoro_ui.c..."
+    ${CC:-cc} $CFLAGS -I"$SCRIPT_DIR/ext" -c "$SCRIPT_DIR/ext/phptoro_ui.c" -o "$BUILD_DIR/phptoro_ui.o"
+    info "compiling cJSON.c..."
+    ${CC:-cc} $CFLAGS -c "$SCRIPT_DIR/ext/cJSON.c" -o "$BUILD_DIR/cJSON.o"
     info "creating libphptoro_ext.a..."
-    ${AR:-ar} rcs "$INSTALL_DIR/lib/libphptoro_ext.a" "$BUILD_DIR/phptoro_ext.o" "$BUILD_DIR/phptoro_phpinfo.o" "$BUILD_DIR/phptoro_sapi.o" "$BUILD_DIR/phptoro_plugin.o"
+    ${AR:-ar} rcs "$INSTALL_DIR/lib/libphptoro_ext.a" \
+        "$BUILD_DIR/phptoro_sapi.o" \
+        "$BUILD_DIR/phptoro_ext.o" \
+        "$BUILD_DIR/phptoro_phpinfo.o" \
+        "$BUILD_DIR/phptoro_plugin.o" \
+        "$BUILD_DIR/phptoro_ui.o" \
+        "$BUILD_DIR/cJSON.o"
     ok "libphptoro_ext.a"
 fi
 
@@ -338,16 +348,26 @@ fi
 
 step "Packaging → $OUTPUT_DIR"
 rm -rf "$OUTPUT_DIR"
-mkdir -p "$OUTPUT_DIR/lib" "$OUTPUT_DIR/include"
+mkdir -p "$OUTPUT_DIR/lib" "$OUTPUT_DIR/include" "$OUTPUT_DIR/src"
 
 for lib in libphp libphptoro_ext libiconv libcharset libxml2 libsqlite3 libssl libcrypto libsodium; do
     [[ -f "$INSTALL_DIR/lib/${lib}.a" ]] && cp "$INSTALL_DIR/lib/${lib}.a" "$OUTPUT_DIR/lib/"
 done
+
+# PHP headers
 cp -R "$INSTALL_DIR/include/php" "$OUTPUT_DIR/include/"
-cp "$SCRIPT_DIR/ext/phptoro_ext.h" "$OUTPUT_DIR/include/"
-cp "$SCRIPT_DIR/ext/phptoro_phpinfo.h" "$OUTPUT_DIR/include/"
+
+# phpToro headers (all public)
 cp "$SCRIPT_DIR/ext/phptoro_sapi.h" "$OUTPUT_DIR/include/"
 cp "$SCRIPT_DIR/ext/phptoro_plugin.h" "$OUTPUT_DIR/include/"
+cp "$SCRIPT_DIR/ext/phptoro_ext.h" "$OUTPUT_DIR/include/"
+cp "$SCRIPT_DIR/ext/phptoro_phpinfo.h" "$OUTPUT_DIR/include/"
+cp "$SCRIPT_DIR/ext/phptoro_ui.h" "$OUTPUT_DIR/include/"
+cp "$SCRIPT_DIR/ext/cJSON.h" "$OUTPUT_DIR/include/"
+
+# Source files compiled by the platform project (needs Yoga C++ headers)
+cp "$SCRIPT_DIR/ext/phptoro_yoga.c" "$OUTPUT_DIR/src/"
+cp "$SCRIPT_DIR/ext/phptoro_yoga.h" "$OUTPUT_DIR/src/"
 
 # Create archive for GitHub Releases
 ARCHIVE="$SCRIPT_DIR/output/php-$PHP_FULL-$TARGET.tar.gz"
