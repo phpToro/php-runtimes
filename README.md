@@ -20,32 +20,25 @@ Each target is available as a separate download from [Releases](https://github.c
 
 Each archive contains:
 
-- `lib/` — Static libraries (`libphp.a`, `libphptoro_ext.a`, `libxml2.a`, `libsqlite3.a`, `libiconv.a`, `libssl.a`, `libcrypto.a`, `libsodium.a`)
-- `include/` — PHP and phpToro headers
-- `src/` — Source files compiled by the platform project (Yoga layout engine)
-
-### libphptoro_ext.a
-
-The phpToro runtime library bundles:
-
-| File | Purpose |
-|---|---|
-| `phptoro_sapi.c` | PHP Embed SAPI (request/response lifecycle) |
-| `phptoro_ext.c` | `phptoro()` PHP function and `PhpToroPlugin` class |
-| `phptoro_plugin.c` | Native plugin registry and dispatcher |
-| `phptoro_ui.c` | UI directive plugin (alert, navigate, flash, haptic, etc.) |
-| `phptoro_phpinfo.c` | Branded phpinfo() output |
-| `cJSON.c` | JSON parser (MIT, v1.7.18) |
-
-### src/
-
-Source files that require platform-specific dependencies:
-
-| File | Purpose | Dependency |
-|---|---|---|
-| `phptoro_yoga.c` | Flexbox layout engine | Yoga C++ |
-
-These are compiled by the platform project (Xcode, Gradle) which provides the required headers.
+```
+lib/
+  libphp.a              — PHP engine
+  libphptoro_ext.a      — phpToro runtime (SAPI, plugin system, UI directives, cJSON)
+  libphptoro_yoga.a     — Yoga flexbox layout engine
+  libxml2.a             — XML parser
+  libsqlite3.a          — SQLite
+  libiconv.a            — Character encoding
+  libssl.a / libcrypto.a — OpenSSL
+  libsodium.a           — Cryptography
+include/
+  phptoro_sapi.h        — PHP request/response lifecycle
+  phptoro_plugin.h      — Native plugin registry
+  phptoro_ext.h         — phptoro() PHP function
+  phptoro_ui.h          — UI directive plugin
+  phptoro_yoga.h        — Yoga layout engine
+  cJSON.h               — JSON parser
+  php/                  — PHP headers
+```
 
 ## Versioning
 
