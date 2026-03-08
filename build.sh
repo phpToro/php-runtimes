@@ -281,6 +281,7 @@ if [[ -f "$INSTALL_DIR/lib/libphp.a" ]]; then ok "skipping"; else
         --enable-json --enable-filter --enable-ctype --enable-session
         --enable-mbstring --disable-mbregex --enable-pdo --enable-spl
         --enable-bcmath --enable-tokenizer --disable-opcache-jit
+        --enable-dom --enable-simplexml --enable-xml
         --with-iconv="$INSTALL_DIR" --with-libxml="$INSTALL_DIR"
         --with-pdo-sqlite="$INSTALL_DIR" --with-sqlite3="$INSTALL_DIR"
         --with-openssl="$INSTALL_DIR" --with-sodium="$INSTALL_DIR"

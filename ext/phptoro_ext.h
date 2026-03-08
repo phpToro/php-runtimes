@@ -20,4 +20,11 @@ extern zend_module_entry phptoro_module_entry;
 /* Returns the zend_function_entry table (for legacy use). */
 const zend_function_entry *phptoro_ext_functions(void);
 
+/*
+ * phptoro_set_response() — called from phptoro_respond() PHP function.
+ * Stores the structured response in the request context.
+ * Defined in phptoro_sapi.c.
+ */
+void phptoro_set_response(const uint8_t *data, size_t len);
+
 #endif /* PHPTORO_EXT_H */

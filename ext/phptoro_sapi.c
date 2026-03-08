@@ -37,11 +37,15 @@ typedef struct {
     const char **req_header_values;
     int         req_header_count;
 
-    /* Response output */
+    /* Response output (captures echo/print — treated as debug output) */
     uint8_t *output;
     size_t   output_len;
     size_t   output_cap;
     int      status_code;
+
+    /* Structured response (set via phptoro_respond(), takes priority) */
+    uint8_t *response;
+    size_t   response_len;
 
     /* Response headers */
     char  **header_names;
@@ -285,6 +289,26 @@ static char sapi_pretty_name[] = "phpToro Embedded";
 
 /* ── Public API ──────────────────────────────────────────────────── */
 
+/* ── phptoro_respond() support ────────────────────────────────────── */
+
+/*
+ * Called from phptoro_respond() in phptoro_ext.c.
+ * Stores a structured response that takes priority over echo/print output.
+ */
+void phptoro_set_response(const uint8_t *data, size_t len) {
+    request_ctx *ctx = SG(server_context);
+    if (!ctx || !data || len == 0) return;
+
+    /* Free previous response if any */
+    if (ctx->response) free(ctx->response);
+
+    ctx->response = malloc(len);
+    if (ctx->response) {
+        memcpy(ctx->response, data, len);
+        ctx->response_len = len;
+    }
+}
+
 static int initialized = 0;
 
 int phptoro_php_init(const char *data_dir) {
@@ -440,13 +464,29 @@ int phptoro_php_execute(const phptoro_request *req, phptoro_response *resp) {
     SG(post_read) = 1;
     php_request_shutdown(NULL);
 
-    /* Copy results (caller takes ownership) */
+    /* Copy results (caller takes ownership).
+     * If phptoro_respond() was called, use that as the body.
+     * Any echo/print output is stray debug output — forwarded separately. */
     resp->status        = ctx.status_code;
-    resp->body          = ctx.output;
-    resp->body_len      = ctx.output_len;
     resp->header_names  = ctx.header_names;
     resp->header_values = ctx.header_values;
     resp->header_count  = ctx.header_count;
+
+    if (ctx.response && ctx.response_len > 0) {
+        /* Structured response takes priority */
+        resp->body     = ctx.response;
+        resp->body_len = ctx.response_len;
+
+        /* Stray echo/print output — attach as debug info */
+        resp->debug     = ctx.output;
+        resp->debug_len = ctx.output_len;
+    } else {
+        /* No phptoro_respond() call — use raw output (backwards compat) */
+        resp->body     = ctx.output;
+        resp->body_len = ctx.output_len;
+        resp->debug     = NULL;
+        resp->debug_len = 0;
+    }
 
     /* Cleanup globals */
     SG(server_context)              = NULL;
@@ -463,6 +503,7 @@ int phptoro_php_execute(const phptoro_request *req, phptoro_response *resp) {
 void phptoro_response_free(phptoro_response *resp) {
     if (!resp) return;
     free(resp->body);
+    free(resp->debug);
     for (int i = 0; i < resp->header_count; i++) {
         free(resp->header_names[i]);
         free(resp->header_values[i]);
